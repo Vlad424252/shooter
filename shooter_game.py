@@ -60,8 +60,29 @@ asteroids = sprite.Group()
 for i in range (1, 5):
     asteroids.add(Enemy('asteroid.png', randint (0, 600), 15, randint (2, 5)))
 
+levels = [
+    {"enemy_count": 10},
+    {"enemy_count": 20},
+    {"enemy_count": 30}
+]
 
-life = 3000
+current_level_index = 0
+def load_level(level_index):
+    global monsters
+    monsters.empty()
+    
+    level_data = levels[level_index]
+    for _ in range(level_data["enemy_count"]):
+        monsters.add(Enemy('ufo.png', randint (0, 600), 15, randint (2, 5)))
+
+def check_level_complete():
+    return len(monsters) == 0
+
+# Загрузка первого уровня
+load_level(current_level_index)
+
+
+life = 3
 lost = 0
 score = 0
 font.init()
@@ -109,11 +130,13 @@ bullet = Bullet('bullet.png', 15, 400, 5)
 while game:
     text_lose = font1.render('Пропущено:' + str(lost), 1, (255, 255, 255))
     text = font1.render('Счёт:' + str(score), 1, (255, 255, 255))
+    text_life = font1.render('Жизни:' + str(score), 1, (255, 255, 255))
 
     if not finish:
         window.blit(background, (0, 0))
         window.blit(text, (5, 30))
-        window.blit(text_lose, (5, 50))
+        window.blit(text_lose, (5, 60))
+        window.blit(text_life, (5, 90))
 
         rocket.update()
         rocket.reset()
@@ -125,24 +148,40 @@ while game:
         bullets.draw(window)
         bullets.update()
 
+    # Проверка завершения уровня
+        if check_level_complete():
+            current_level_index += 1
+            
+            if current_level_index < len(levels):
+                load_level(current_level_index)  # Загружаем следующий уровень
+            else:
+                print("Игра завершена!")
+                game = False
+
         collides = sprite.groupcollide(monsters, bullets, True, True)
         for c in collides:
             score = score + 1
-            monster = Enemy('ufo.png', randint(80, 620), -40, randint(1, 5), 65, 65)
-            monsters.add(monster)
+            # monster = Enemy('ufo.png', randint(80, 620), -40, randint(1, 5), 65, 65)
+            # monsters.add(monster)
 
-        if sprite.spritecollide(rocket, monsters, False):
-            sprite.spritecollide(rocket, monsters, True)
+        collides_monsters = sprite.spritecollide(rocket, monsters, False)
+        for m in collides_monsters:
             life = life - 1
+            # sprite.spritecollide(rocket, monsters, True)
+            m.kill()
+            # monster = Enemy('ufo.png', randint(80, 620), -40, randint(1, 5), 65, 65)
+            # monsters.add(monster)
 
 
-        if lost >= 10 or life <= 0:
+        if lost >= 100 or life <= 0:
             finish = True
             window.blit(lose, (200, 200))
 
-        if score >= 15:
+        if score >= 100:            
             finish = True
             window.blit(win, (200, 200))
+
+        
 
     for e in event.get():
         if e.type == QUIT:
